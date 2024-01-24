@@ -24,11 +24,12 @@ import (
 
 const ConfName string = "conf.json"
 
-const Version string = "0.1-server"
+const Version string = "0.2-server"
 
 var (
-	port    *uint = flag.Uint("port", 80, "Set server port")
-	version *bool = flag.Bool("version", false, "Print version information")
+	port         *uint = flag.Uint("port", 80, "Set server port")
+	version      *bool = flag.Bool("version", false, "Print version information")
+	noAutoReconf *bool = flag.Bool("no-autoreconf", false, "Do NOT reopen configuration file and reload stored configuration on each new request")
 )
 
 func main() {
@@ -36,7 +37,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Printf("HTCPCP-server %s\nKasianov Nikolai Alekseevich (Unbewohnte)\n", Version)
+		fmt.Printf("HTCPCP-server %s\n(C) 2024 Kasianov Nikolai Alekseevich (Unbewohnte)\n", Version)
 		return
 	}
 
@@ -47,14 +48,15 @@ func main() {
 	}
 	wDir := filepath.Dir(exePath)
 
-	// Open commands file, create if does not exist
-	conf, err := ConfFromFile(filepath.Join(wDir, ConfName))
+	confPath := filepath.Join(wDir, ConfName)
+	// Open configuration file, create if does not exist
+	conf, err := ConfFromFile(confPath)
 	if err != nil {
-		_, err = CreateConf(filepath.Join(wDir, ConfName), DefaultConf())
+		_, err = CreateConf(confPath, DefaultConf())
 		if err != nil {
-			log.Fatalf("Failed to create a new commands file: %s", err)
+			log.Fatalf("Failed to create a new configuration file: %s", err)
 		}
-		log.Printf("Created a new commands file")
+		log.Printf("Created a new configuration file")
 		os.Exit(0)
 	}
 
@@ -62,6 +64,22 @@ func main() {
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Reload configuration options in case something's changed
+		if !*noAutoReconf {
+			conf, err = ConfFromFile(confPath)
+			if err != nil {
+				log.Fatalf("Could not reopen configuration file: %s", err)
+			}
+
+			// If not ready - wait for this iteration to end, not now
+			if pot.State == PotStatusReady {
+				pot.commands = conf.Commands
+				pot.CoffeeType = conf.CoffeeType
+				pot.BrewTimeSec = conf.BrewTimeSec
+				pot.MaxPourTimeSec = conf.MaxPourTimeSec
+			}
+		}
+
 		if r.Method == "BREW" || r.Method == "POST" {
 			// Brew some coffee
 			if r.Header.Get("Content-Type") != "application/coffee-pot-command" {
@@ -102,6 +120,8 @@ func main() {
 			err := pot.StopPouring()
 			if err != nil {
 				log.Printf("Failed to stop pouring milk: %s\n", err)
+				http.Error(w, "Coffee is not brewed yet", http.StatusBadRequest)
+				return
 			}
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

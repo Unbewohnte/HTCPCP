@@ -71,7 +71,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Printf("HTCPCP-client %s\nKasianov Nikolai Alekseevich (Unbewohnte)\n", Version)
+		fmt.Printf("HTCPCP-client %s\n(C) 2024 Kasianov Nikolai Alekseevich (Unbewohnte)\n", Version)
 		return
 	}
 

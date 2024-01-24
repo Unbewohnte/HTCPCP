@@ -30,11 +30,21 @@ Default configuration file structure:
 
 `brew-time-sec` is the approximate time it takes to brew coffee in seconds. After this amount is passed, status of the pot changes to `Pouring` and will stay it until `max-pour-time-sec` seconds are passed or an incoming request with `WHEN` method is presented.
 
+Configuration is initialized on program start and is responsive to change of the configuration file. If the configuration file is changed - the changes will take place in server program as well. Configuration file is reopened and applied once on each incoming request. This behaviour can be turned off via `-no-autoreconf` flag. If flag is present - initial configuration will stay constant.
+
 By default port 80 is used, but can be changed with a `-port` flag:
 
 `HTCPCP-server -port 8000`
 
 Server will listen and handle incoming requests.
+
+Examples:
+
+- `HTCPCP-server -port 8000` - starts a server on port 8000
+- `HTCPCP-server` - starts a server on port 80
+- `HTCPCP-server -port 8000 -no-autoreconf` - starts a server on port 8000, configuration is constant
+- `HTCPCP-server -version` - prints a version information
+
 
 ### Client
 

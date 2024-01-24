@@ -34,7 +34,7 @@ type Pot struct {
 	commands       Commands
 }
 
-func NewPot(conf Conf) *Pot {
+func NewPot(conf *Conf) *Pot {
 	return &Pot{
 		State:          PotStatusReady,
 		CoffeeType:     conf.CoffeeType,

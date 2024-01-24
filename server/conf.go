@@ -43,44 +43,44 @@ func DefaultConf() Conf {
 }
 
 // Tries to retrieve configuration structure from given json file
-func ConfFromFile(path string) (Conf, error) {
+func ConfFromFile(path string) (*Conf, error) {
 	confFile, err := os.Open(path)
 	if err != nil {
-		return DefaultConf(), err
+		return nil, err
 	}
 	defer confFile.Close()
 
 	confBytes, err := io.ReadAll(confFile)
 	if err != nil {
-		return DefaultConf(), err
+		return nil, err
 	}
 
-	var conf Conf
+	var conf *Conf
 	err = json.Unmarshal(confBytes, &conf)
 	if err != nil {
-		return DefaultConf(), err
+		return nil, err
 	}
 
 	return conf, nil
 }
 
 // Create a new configuration file
-func CreateConf(path string, conf Conf) (Conf, error) {
+func CreateConf(path string, conf Conf) (*Conf, error) {
 	confFile, err := os.Create(path)
 	if err != nil {
-		return DefaultConf(), err
+		return nil, err
 	}
 	defer confFile.Close()
 
-	confJsonBytes, err := json.MarshalIndent(conf, "", " ")
+	confJsonBytes, err := json.MarshalIndent(&conf, "", " ")
 	if err != nil {
-		return conf, err
+		return nil, err
 	}
 
 	_, err = confFile.Write(confJsonBytes)
 	if err != nil {
-		return conf, nil
+		return nil, nil
 	}
 
-	return conf, nil
+	return &conf, nil
 }
